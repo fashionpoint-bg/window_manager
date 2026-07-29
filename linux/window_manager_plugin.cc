@@ -37,16 +37,26 @@ struct _WindowManagerPlugin {
 G_DEFINE_TYPE(WindowManagerPlugin, window_manager_plugin, g_object_get_type())
 
 // Gets the window being controlled.
+// Returns nullptr if the view has been destroyed, e.g. when the window has
+// been closed while the engine is still running.
 GtkWindow* get_window(WindowManagerPlugin* self) {
   FlView* view = fl_plugin_registrar_get_view(self->registrar);
   if (view == nullptr)
     return nullptr;
 
-  return GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+  GtkWidget* toplevel = gtk_widget_get_toplevel(GTK_WIDGET(view));
+  if (!GTK_IS_WINDOW(toplevel))
+    return nullptr;
+
+  return GTK_WINDOW(toplevel);
 }
 
 GdkWindow* get_gdk_window(WindowManagerPlugin* self) {
-  return gtk_widget_get_window(GTK_WIDGET(get_window(self)));
+  GtkWindow* window = get_window(self);
+  if (window == nullptr)
+    return nullptr;
+
+  return gtk_widget_get_window(GTK_WIDGET(window));
 }
 
 static FlMethodResponse* set_as_frameless(WindowManagerPlugin* self,
@@ -816,6 +826,25 @@ static FlMethodResponse* set_brightness(WindowManagerPlugin* self,
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
+// Returns true if the method needs the toplevel window to be handled.
+static bool method_needs_window(const gchar* method) {
+  static const gchar* const methods_without_window[] = {
+      "ensureInitialized", "waitUntilReadyToShow",
+      "close", "destroy",
+      "isPreventClose", "setPreventClose",
+      "blur",
+      "isDockable", "isDocked", "dock", "undock",
+      "isAlwaysOnTop", "isAlwaysOnBottom",
+      "ungrabKeyboard", "setBrightness",
+  };
+  for (size_t i = 0; i < G_N_ELEMENTS(methods_without_window); i++) {
+    if (g_strcmp0(method, methods_without_window[i]) == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Called when a method call is received from Flutter.
 static void window_manager_plugin_handle_method_call(
     WindowManagerPlugin* self,
@@ -825,7 +854,14 @@ static void window_manager_plugin_handle_method_call(
   const gchar* method = fl_method_call_get_name(method_call);
   FlValue* args = fl_method_call_get_args(method_call);
 
-  if (g_strcmp0(method, "ensureInitialized") == 0) {
+  if (method_needs_window(method) && get_window(self) == nullptr) {
+    // The window has been destroyed while the engine is still running.
+    // Passing a null window into GTK crashes: gtk_window_is_maximized and
+    // others dereference the pointer before validating it.
+    // https://github.com/rustdesk/rustdesk/issues/15703
+    response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+        "window_destroyed", "The window has been destroyed", nullptr));
+  } else if (g_strcmp0(method, "ensureInitialized") == 0) {
     g_autoptr(FlValue) result = fl_value_new_bool(true);
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(result));
   } else if (g_strcmp0(method, "waitUntilReadyToShow") == 0) {
