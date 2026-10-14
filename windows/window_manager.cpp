@@ -169,11 +169,13 @@ void WindowManager::ForceRefresh() {
   SetWindowPos(
       hWnd, nullptr, rect.left, rect.top, rect.right - rect.left + 1,
       rect.bottom - rect.top,
-      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED);
+      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED |
+          SWP_NOACTIVATE);
   SetWindowPos(
       hWnd, nullptr, rect.left, rect.top, rect.right - rect.left,
       rect.bottom - rect.top,
-      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED);
+      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED |
+          SWP_NOACTIVATE);
 }
 
 void WindowManager::ForceChildRefresh() {
@@ -185,11 +187,13 @@ void WindowManager::ForceChildRefresh() {
   SetWindowPos(
       hWnd, nullptr, rect.left, rect.top, rect.right - rect.left + 1,
       rect.bottom - rect.top,
-      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED);
+      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED |
+          SWP_NOACTIVATE);
   SetWindowPos(
       hWnd, nullptr, rect.left, rect.top, rect.right - rect.left,
       rect.bottom - rect.top,
-      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED);
+      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED |
+          SWP_NOACTIVATE);
 }
 
 void WindowManager::SetAsFrameless() {
@@ -202,7 +206,7 @@ void WindowManager::SetAsFrameless() {
   SetWindowPos(hWnd, nullptr, rect.left, rect.top, rect.right - rect.left,
                rect.bottom - rect.top,
                SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE |
-                   SWP_FRAMECHANGED);
+                   SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 void WindowManager::WaitUntilReadyToShow() {
@@ -734,7 +738,7 @@ void WindowManager::SetBounds(const flutter::EncodableMap& args) {
     uFlags = SWP_NOSIZE;
   }
 
-  SetWindowPos(hwnd, HWND_TOP, x, y, width, height, uFlags);
+  SetWindowPos(hwnd, HWND_TOP, x, y, width, height, uFlags | SWP_NOACTIVATE);
 }
 
 void WindowManager::SetMinimumSize(const flutter::EncodableMap& args) {
@@ -840,7 +844,7 @@ void WindowManager::SetAlwaysOnTop(const flutter::EncodableMap& args) {
   bool isAlwaysOnTop =
       std::get<bool>(args.at(flutter::EncodableValue("isAlwaysOnTop")));
   SetWindowPos(GetMainWindow(), isAlwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST,
-               0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+               0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
 bool WindowManager::IsAlwaysOnBottom() {
@@ -858,7 +862,7 @@ void WindowManager::SetAlwaysOnBottom(const flutter::EncodableMap& args) {
     0,
     0,
     0,
-    SWP_NOMOVE | SWP_NOSIZE
+    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
   );
 }
 
@@ -893,7 +897,7 @@ void WindowManager::SetTitleBarStyle(const flutter::EncodableMap& args) {
   DwmExtendFrameIntoClientArea(hWnd, &margins);
   SetWindowPos(hWnd, nullptr, rect.left, rect.top, 0, 0,
                SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE |
-                   SWP_FRAMECHANGED);
+                   SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 int WindowManager::GetTitleBarHeight() {
