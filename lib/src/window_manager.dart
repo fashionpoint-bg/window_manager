@@ -196,7 +196,9 @@ class WindowManager {
   /// Shows and gives focus to the window.
   Future<void> show({bool inactive = false}) async {
     bool isMinimized = await this.isMinimized();
-    if (isMinimized) {
+    // On Windows an inactive show restores the window itself; restore() would
+    // activate it.
+    if (isMinimized && !(inactive && Platform.isWindows)) {
       await restore();
     }
     final Map<String, dynamic> arguments = {

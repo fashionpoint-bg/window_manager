@@ -359,7 +359,16 @@ void WindowManagerPlugin::HandleMethodCall(
     bool value = window_manager->IsFocused();
     result->Success(flutter::EncodableValue(value));
   } else if (method_name.compare("show") == 0) {
-    window_manager->Show();
+    bool inactive = false;
+    const auto* args =
+        std::get_if<flutter::EncodableMap>(method_call.arguments());
+    if (args) {
+      auto it = args->find(flutter::EncodableValue("inactive"));
+      if (it != args->end() && std::holds_alternative<bool>(it->second)) {
+        inactive = std::get<bool>(it->second);
+      }
+    }
+    window_manager->Show(inactive);
     result->Success(flutter::EncodableValue(true));
   } else if (method_name.compare("hide") == 0) {
     window_manager->Hide();

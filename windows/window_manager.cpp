@@ -83,7 +83,7 @@ class WindowManager {
   void WindowManager::Focus();
   void WindowManager::Blur();
   bool WindowManager::IsFocused();
-  void WindowManager::Show();
+  void WindowManager::Show(bool inactive);
   void WindowManager::Hide();
   bool WindowManager::IsVisible();
   bool WindowManager::IsMaximized();
@@ -254,7 +254,7 @@ bool WindowManager::IsFocused() {
   return GetMainWindow() == GetActiveWindow();
 }
 
-void WindowManager::Show() {
+void WindowManager::Show(bool inactive) {
   HWND hWnd = GetMainWindow();
   DWORD gwlStyle = GetWindowLong(hWnd, GWL_STYLE);
   gwlStyle = gwlStyle | WS_VISIBLE;
@@ -263,6 +263,12 @@ void WindowManager::Show() {
     ::SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
   }
 
+  if (inactive) {
+    // Shown, and restored if minimized, without taking the focus from the
+    // window the user is working in.
+    ShowWindowAsync(hWnd, SW_SHOWNOACTIVATE);
+    return;
+  }
   ShowWindowAsync(GetMainWindow(), SW_SHOW);
   SetForegroundWindow(GetMainWindow());
 }
